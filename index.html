@@ -234,7 +234,7 @@ function showView(name){
   window.scrollTo(0,0);
 }
 
-/* ---------- 发音：Dictionary API → Google TTS → speechSynthesis ---------- */
+/* ---------- 发音：有道词典 → Dictionary API → Google TTS → speechSynthesis ---------- */
 var audioCache = {};
 var currentAudio = null;
 function speakFallback(word){
@@ -290,6 +290,9 @@ async function playWord(word, btn){
   var orig = btn ? btn.textContent : "";
   if(btn){ btn.disabled = true; btn.textContent = "⏳"; }
   try{
+    var ydUrl = "https://dict.youdao.com/dictvoice?audio=" + encodeURIComponent(word) + "&type=0";
+    var okYd = await playAudioUrl(ydUrl, word);
+    if(okYd) return;
     var dictUrl = await fetchDictAudio(word);
     if(dictUrl){
       var ok1 = await playAudioUrl(dictUrl, word);
