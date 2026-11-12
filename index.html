@@ -1,0 +1,663 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="color-scheme" content="light dark" />
+<link rel="icon" href="data:," />
+<title>CET4 单词抽考</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700;900&family=Fraunces:opsz,wght@9..144,700;9..144,900&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#f4f6f3; --surface:#ffffff; --surface2:#eef2ee; --ink:#1a2420; --muted:#5b6b62;
+    --line:#d9e0d9; --accent:#0f6b4f; --accent-ink:#ffffff; --accent-soft:#dff0e7;
+    --amber:#b7791f; --amber-soft:#fdf0d3; --ok:#16794c; --ok-bg:#dcf2e4; --bad:#b42318; --bad-bg:#fde4e1;
+    --radius:14px; --shadow:0 6px 24px rgba(20,40,30,.08);
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#121714; --surface:#1c2420; --surface2:#232d28; --ink:#eef3ef; --muted:#a7b5ab;
+      --line:#33413a; --accent:#2fae7f; --accent-ink:#0c1712; --accent-soft:#1e3a2e;
+      --amber:#e0a83e; --amber-soft:#3a2f14; --ok:#4ade80; --ok-bg:#143626; --bad:#ff8a7a; --bad-bg:#3d1d19;
+      --shadow:0 6px 24px rgba(0,0,0,.35);
+    }
+  }
+  *{box-sizing:border-box}
+  html{-webkit-text-size-adjust:100%}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:"Noto Sans SC",system-ui,-apple-system,"Segoe UI",sans-serif;line-height:1.55}
+  button,[role="button"],select,summary,input:not([type="checkbox"],[type="radio"]){min-height:2.75rem}
+  button{font-family:inherit;cursor:pointer}
+  a{color:var(--accent)}
+  .wrap{max-width:760px;margin:0 auto;padding:20px 16px 56px}
+  .eyebrow{font-size:13px;letter-spacing:.14em;font-weight:700;color:var(--accent);text-transform:uppercase}
+  h1{font-family:"Fraunces","Noto Sans SC",serif;font-size:40px;line-height:1.1;margin:6px 0 8px;font-weight:900}
+  .sub{color:var(--muted);font-size:16px;margin:0 0 20px;max-width:56ch}
+  .card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);padding:20px}
+  .last-result{background:var(--amber-soft);border:1px solid var(--line);border-radius:var(--radius);padding:14px 16px;margin-bottom:16px;font-size:15px}
+  .last-result strong{color:var(--amber)}
+  .mode-label{font-weight:700;font-size:17px;margin:18px 0 12px}
+  .mode-label:first-child{margin-top:4px}
+  .modes{display:grid;gap:10px}
+  @media(min-width:560px){.modes{grid-template-columns:repeat(3,1fr)}.modes.two{grid-template-columns:repeat(2,1fr)}}
+  .mode-btn{text-align:left;background:var(--surface2);border:2px solid var(--line);border-radius:12px;padding:16px;min-height:96px;color:var(--ink)}
+  .mode-btn .t{font-size:18px;font-weight:900;display:block;margin-bottom:4px}
+  .mode-btn .d{font-size:14px;color:var(--muted);display:block;line-height:1.45}
+  .mode-btn[aria-pressed="true"]{border-color:var(--accent);background:var(--accent-soft)}
+  .chips{display:flex;flex-wrap:wrap;gap:8px}
+  .chip{border:2px solid var(--line);background:var(--surface2);color:var(--ink);border-radius:999px;padding:9px 16px;font-size:15.5px;font-weight:700;min-height:44px}
+  .chip[aria-pressed="true"]{border-color:var(--accent);background:var(--accent-soft);color:var(--accent)}
+  .range-note{font-size:14px;color:var(--muted);margin-top:8px}
+  .primary{width:100%;margin-top:16px;background:var(--accent);color:var(--accent-ink);border:none;border-radius:12px;font-size:19px;font-weight:900;padding:16px;min-height:60px}
+  .primary:active{transform:scale(.99)}
+  .ghost{width:100%;margin-top:10px;background:transparent;color:var(--ink);border:2px solid var(--line);border-radius:12px;font-size:16px;font-weight:700;padding:13px;min-height:52px}
+  .topbar{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:10px;font-weight:700;flex-wrap:wrap}
+  .score-pill{background:var(--accent-soft);color:var(--accent);border-radius:999px;padding:6px 14px;font-size:15px}
+  .progress{height:10px;background:var(--surface2);border-radius:999px;overflow:hidden;margin-bottom:18px;border:1px solid var(--line)}
+  .progress>i{display:block;height:100%;background:var(--accent);width:0%;transition:width .3s ease}
+  .q-dir{font-size:13px;font-weight:700;letter-spacing:.08em;color:var(--muted)}
+  .q-word{font-size:38px;font-weight:900;line-height:1.2;margin:8px 0 4px;word-break:break-word}
+  .q-word.zh-prompt{font-size:30px}
+  .q-pos{color:var(--muted);font-size:16px}
+  .q-head{display:flex;justify-content:space-between;align-items:flex-start;gap:12px}
+  .speak-btn{flex:0 0 auto;width:56px;height:56px;border-radius:50%;border:2px solid var(--accent);background:var(--accent-soft);font-size:24px;display:inline-flex;align-items:center;justify-content:center;color:var(--accent)}
+  .speak-btn:disabled{opacity:.35;border-color:var(--line);background:var(--surface2);cursor:not-allowed}
+  .speak-btn.small{width:44px;height:44px;font-size:19px;border-width:1.5px}
+  .speak-note{font-size:13px;color:var(--muted);margin-top:2px}
+  .options{display:grid;gap:10px;margin-top:18px}
+  .opt{text-align:left;background:var(--surface);border:2px solid var(--line);border-radius:12px;padding:15px 16px;font-size:18px;font-weight:600;color:var(--ink);min-height:58px;width:100%}
+  .opt:disabled{cursor:default;opacity:1}
+  .opt.correct{border-color:var(--ok);background:var(--ok-bg);color:var(--ink)}
+  .opt.wrong{border-color:var(--bad);background:var(--bad-bg);color:var(--ink)}
+  .opt.dim{opacity:.55}
+  .feedback{margin-top:16px;border-radius:12px;padding:16px;display:none}
+  .feedback.show{display:block}
+  .feedback.good{background:var(--ok-bg);border:1px solid var(--ok)}
+  .feedback.badf{background:var(--bad-bg);border:1px solid var(--bad)}
+  .feedback .verdict{font-size:19px;font-weight:900;margin-bottom:6px}
+  .feedback .detail{font-size:15.5px;line-height:1.65}
+  .feedback .detail .enw{font-weight:900;font-size:18px}
+  .ext-links{display:flex;flex-wrap:wrap;gap:10px;margin-top:16px}
+  .ext-links a{display:inline-flex;align-items:center;min-height:44px;padding:8px 14px;border:1.5px solid var(--line);border-radius:999px;text-decoration:none;font-size:14.5px;font-weight:700;background:var(--surface)}
+  .ext-links .locked{font-size:13.5px;color:var(--muted);align-self:center}
+  .next-btn{width:100%;margin-top:16px;background:var(--accent);color:var(--accent-ink);border:none;border-radius:12px;font-size:18px;font-weight:900;padding:15px;min-height:56px;display:none}
+  .next-btn.show{display:block}
+  .end-btn{width:100%;margin-top:10px;background:transparent;color:var(--bad);border:2px solid var(--bad);border-radius:12px;font-size:16px;font-weight:700;padding:13px;min-height:52px;display:none}
+  .end-btn.show{display:block}
+  .quit-btn{background:none;border:none;color:var(--muted);font-size:14.5px;text-decoration:underline;min-height:44px;padding:8px 4px}
+  .result-score{font-size:56px;font-weight:900;font-family:"Fraunces",serif;line-height:1;text-align:center;margin:8px 0 2px}
+  .result-sub{text-align:center;color:var(--muted);margin-bottom:18px;font-size:16px}
+  .wrong-item{display:flex;gap:12px;align-items:flex-start;padding:13px 0;border-top:1px solid var(--line)}
+  .wrong-item:first-of-type{border-top:none}
+  .wrong-item .wi-main{flex:1;min-width:0}
+  .wrong-item .wi-en{font-weight:900;font-size:18px}
+  .wrong-item .wi-zh{color:var(--muted);font-size:15px}
+  .search{width:100%;font-size:17px;padding:13px 14px;border:2px solid var(--line);border-radius:12px;background:var(--surface);color:var(--ink);margin-bottom:14px;min-height:52px}
+  .word-row{display:flex;gap:10px;align-items:flex-start;padding:13px 0;border-top:1px solid var(--line)}
+  .word-row:first-of-type{border-top:none}
+  .word-row .num{color:var(--muted);font-size:13px;width:34px;flex:0 0 34px;padding-top:3px;font-variant-numeric:tabular-nums}
+  .word-row .wr-main{flex:1;min-width:0}
+  .word-row .wr-en{font-weight:900;font-size:18px}
+  .word-row .wr-pos{color:var(--accent);font-weight:700;font-size:14px;margin-left:6px}
+  .word-row .wr-zh{font-size:15.5px}
+  .word-row .wr-col{font-size:13.5px;color:var(--muted);margin-top:2px}
+  .word-row .wr-actions{display:flex;flex-direction:column;gap:6px;align-items:center}
+  .mw-link{font-size:12.5px;font-weight:700;text-decoration:none;border:1px solid var(--line);border-radius:999px;padding:5px 9px;min-height:32px;display:inline-flex;align-items:center}
+  .hidden{display:none !important}
+  .list-count{color:var(--muted);font-size:14px;margin-bottom:6px}
+  @media (prefers-reduced-motion: reduce){*{transition:none !important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- ===== 首页 ===== -->
+  <section id="view-home">
+    <div class="eyebrow">CET-4 · 核心词 600</div>
+    <h1>CET4 单词抽考</h1>
+    <p class="sub">全部 600 个核心词，分段范围任选，两种练习方式。每题都能听英文发音，也可以连到 Merriam-Webster 和 Google 翻译对照你平常看的念法。</p>
+
+    <div id="lastResult" class="last-result hidden"></div>
+
+    <div class="card">
+      <div class="mode-label">1 · 选择测验方向</div>
+      <div class="modes" role="group" aria-label="测验方向">
+        <button type="button" class="mode-btn" data-mode="en2zh" aria-pressed="true">
+          <span class="t">英翻中</span>
+          <span class="d">题目给英文，选出正确的中文意思</span>
+        </button>
+        <button type="button" class="mode-btn" data-mode="zh2en" aria-pressed="false">
+          <span class="t">中翻英</span>
+          <span class="d">题目给中文，选出正确的英文单词（作答前不播放发音，避免泄露答案）</span>
+        </button>
+        <button type="button" class="mode-btn" data-mode="mixed" aria-pressed="false">
+          <span class="t">混合随机</span>
+          <span class="d">每一题随机决定英翻中或中翻英</span>
+        </button>
+      </div>
+
+      <div class="mode-label">2 · 选择范围</div>
+      <div class="chips" role="group" aria-label="单词范围" id="homeRangeChips"></div>
+      <div class="range-note" id="rangeNote"></div>
+
+      <div class="mode-label">3 · 选择练习方式</div>
+      <div class="modes two" role="group" aria-label="练习方式">
+        <button type="button" class="mode-btn kind-btn" data-kind="finite" aria-pressed="true">
+          <span class="t">20 题模式</span>
+          <span class="d">从所选范围随机抽 20 题，做完看成绩和错题</span>
+        </button>
+        <button type="button" class="mode-btn kind-btn" data-kind="loop" aria-pressed="false">
+          <span class="t">循环模式</span>
+          <span class="d">一直出题不中断：范围内出完之前不重复，出完自动洗牌再继续，随时可结束结算</span>
+        </button>
+      </div>
+
+      <button type="button" class="primary" id="startBtn">开始抽考 20 题 →</button>
+      <button type="button" class="ghost" id="openListBtn">📖 查看单词表（跟随所选范围）</button>
+    </div>
+  </section>
+
+  <!-- ===== 测验 ===== -->
+  <section id="view-quiz" class="hidden">
+    <div class="topbar">
+      <span id="qProgress">第 1 / 20 题</span>
+      <span class="score-pill" id="qScore">得分 0</span>
+    </div>
+    <div class="progress" aria-hidden="true"><i id="qBar"></i></div>
+
+    <div class="card">
+      <div class="q-head">
+        <div style="flex:1;min-width:0">
+          <div class="q-dir" id="qDir">英翻中 · 选出中文意思</div>
+          <div class="q-word" id="qWord">—</div>
+          <div class="q-pos" id="qPos"></div>
+        </div>
+        <div style="text-align:center">
+          <button type="button" class="speak-btn" id="qSpeak" aria-label="播放英文发音">🔊</button>
+          <div class="speak-note" id="qSpeakNote">听发音</div>
+        </div>
+      </div>
+
+      <div class="options" id="qOptions"></div>
+
+      <div class="feedback" id="qFeedback" aria-live="polite"></div>
+
+      <div class="ext-links" id="qLinks"></div>
+
+      <button type="button" class="next-btn" id="nextBtn">下一题 →</button>
+      <button type="button" class="end-btn" id="endBtn">结束循环并结算</button>
+    </div>
+    <button type="button" class="quit-btn" id="quitBtn">放弃这次测验，回首页</button>
+  </section>
+
+  <!-- ===== 成绩 / 结算 ===== -->
+  <section id="view-result" class="hidden">
+    <div class="eyebrow" id="rEyebrow">测验结果</div>
+    <div class="card">
+      <div class="result-score" id="rScore">0 / 20</div>
+      <div class="result-sub" id="rSub"></div>
+      <div id="rPerfect" class="hidden" style="text-align:center;font-size:17px;font-weight:700;padding:10px 0 4px">🎉 全部答对，太厉害了！</div>
+      <div id="rWrongWrap">
+        <div style="font-weight:900;font-size:17px;margin:14px 0 4px">错题复习</div>
+        <div id="rWrongList"></div>
+      </div>
+      <button type="button" class="primary" id="continueBtn">继续循环 →</button>
+      <button type="button" class="primary" id="againBtn">再测一次（重新随机 20 题）</button>
+      <button type="button" class="ghost" id="retryWrongBtn">只重测错题</button>
+      <button type="button" class="ghost" id="homeBtn">回首页</button>
+    </div>
+  </section>
+
+  <!-- ===== 单词表 ===== -->
+  <section id="view-list" class="hidden">
+    <div class="eyebrow">单词表</div>
+    <h1 style="font-size:30px">全部单词</h1>
+    <button type="button" class="ghost" id="backHomeBtn" style="margin:0 0 14px;width:auto;padding:10px 18px">← 回首页</button>
+    <div class="chips" role="group" aria-label="单词表范围" id="listRangeChips" style="margin-bottom:12px"></div>
+    <input class="search" id="listSearch" type="search" placeholder="搜索英文或中文，例如 affect / 影响" aria-label="搜索单词">
+    <div class="card" style="padding:8px 20px">
+      <div class="list-count" id="listCount"></div>
+      <div id="wordList"></div>
+    </div>
+  </section>
+
+</div>
+
+<script>
+var WORDS = [{"id":1,"en":"affect","pos":"v.","zh":"影响","collocation":"affect health/performance（影响健康/表现）"},{"id":2,"en":"influence","pos":"v./n.","zh":"影响；作用","collocation":"have an influence on（对……有影响）"},{"id":3,"en":"improve","pos":"v.","zh":"改善；提高","collocation":"improve efficiency/quality（提高效率/质量）"},{"id":4,"en":"increase","pos":"v./n.","zh":"增加；增长","collocation":"increase by/to（增加了/增加到）"},{"id":5,"en":"reduce","pos":"v.","zh":"减少；降低","collocation":"reduce risk/cost（降低风险/成本）"},{"id":6,"en":"maintain","pos":"v.","zh":"维持；保持","collocation":"maintain balance/health（保持平衡/健康）"},{"id":7,"en":"determine","pos":"v.","zh":"决定；确定","collocation":"determine whether...（确定是否……）"},{"id":8,"en":"indicate","pos":"v.","zh":"表明；指出","collocation":"indicate that...（表明……）"},{"id":9,"en":"require","pos":"v.","zh":"需要；要求","collocation":"require sb to do（要求某人做）"},{"id":10,"en":"provide","pos":"v.","zh":"提供","collocation":"provide sb with sth（给某人提供某物）；provide sth for sb（为某人提供某物）"},{"id":11,"en":"contribute","pos":"v.","zh":"贡献；促成","collocation":"contribute to（促成；有助于）"},{"id":12,"en":"involve","pos":"v.","zh":"涉及；包含；使参与","collocation":""},{"id":13,"en":"achieve","pos":"v.","zh":"实现；达到","collocation":"achieve a goal/success（实现目标/取得成功）"},{"id":14,"en":"obtain","pos":"v.","zh":"获得","collocation":"obtain information/data（获取信息/数据）"},{"id":15,"en":"establish","pos":"v.","zh":"建立；确立","collocation":"establish a system/relationship（建立体系/关系）"},{"id":16,"en":"promote","pos":"v.","zh":"促进；提升；宣传","collocation":"promote development/health（促进发展/健康）"},{"id":17,"en":"prevent","pos":"v.","zh":"阻止；预防","collocation":"prevent sb/sth from doing sth（阻止……做……；防止……发生）"},{"id":18,"en":"avoid","pos":"v.","zh":"避免","collocation":"avoid doing（避免做）"},{"id":19,"en":"consider","pos":"v.","zh":"考虑；认为","collocation":"consider doing（考虑做……）"},{"id":20,"en":"suggest","pos":"v.","zh":"建议；表明","collocation":"suggest doing（建议做）"},{"id":21,"en":"approach","pos":"v./n.","zh":"接近；处理；方法","collocation":""},{"id":22,"en":"support","pos":"v./n.","zh":"支持","collocation":"support a claim/argument（支持观点/论证）"},{"id":23,"en":"encourage","pos":"v.","zh":"鼓励；促进","collocation":"encourage sb to do（鼓励某人做）"},{"id":24,"en":"enable","pos":"v.","zh":"使能够","collocation":"enable sb to do（使某人能够做）"},{"id":25,"en":"allow","pos":"v.","zh":"允许","collocation":"allow sb to do（允许某人做）"},{"id":26,"en":"expect","pos":"v.","zh":"预期；期待","collocation":"be expected to（预计/被要求……）"},{"id":27,"en":"assume","pos":"v.","zh":"假定；认为","collocation":""},{"id":28,"en":"recognize","pos":"v.","zh":"认出；认识到；承认","collocation":"recognize the importance of（认识到……的重要性）"},{"id":29,"en":"realize","pos":"v.","zh":"意识到；实现","collocation":""},{"id":30,"en":"respond","pos":"v.","zh":"回应；作出反应","collocation":"respond to（回应；对……作出反应）"},{"id":31,"en":"depend","pos":"v.","zh":"依赖；取决于","collocation":"depend on（取决于；依赖）"},{"id":32,"en":"develop","pos":"v.","zh":"发展；培养","collocation":""},{"id":33,"en":"remain","pos":"v.","zh":"保持；仍然是","collocation":"remain stable/unchanged（保持稳定/不变）"},{"id":34,"en":"occur","pos":"v.","zh":"发生；出现","collocation":""},{"id":35,"en":"result","pos":"v./n.","zh":"导致；结果","collocation":"result in（导致）；result from（由……导致）；as a result（因此）；as a result of（由于）"},{"id":36,"en":"cause","pos":"v./n.","zh":"导致；原因","collocation":""},{"id":37,"en":"include","pos":"v.","zh":"包括","collocation":""},{"id":38,"en":"compare","pos":"v.","zh":"比较","collocation":"compare A with/to B"},{"id":39,"en":"describe","pos":"v.","zh":"描述","collocation":""},{"id":40,"en":"explain","pos":"v.","zh":"解释","collocation":""},{"id":41,"en":"accept","pos":"v.","zh":"接受","collocation":""},{"id":42,"en":"adapt","pos":"v.","zh":"适应；改编","collocation":"adapt to（适应）"},{"id":43,"en":"adopt","pos":"v.","zh":"采用；收养","collocation":""},{"id":44,"en":"admit","pos":"v.","zh":"承认；准许进入","collocation":""},{"id":45,"en":"advise","pos":"v.","zh":"建议","collocation":"advise sb to do（建议某人做）"},{"id":46,"en":"afford","pos":"v.","zh":"负担得起","collocation":""},{"id":47,"en":"apply","pos":"v.","zh":"申请；应用；适用","collocation":"apply for sth（申请某物/职位）；apply to sb/org for sth（向某人/机构申请）；apply to（适用于）"},{"id":48,"en":"appreciate","pos":"v.","zh":"欣赏；感激；理解","collocation":""},{"id":49,"en":"attract","pos":"v.","zh":"吸引","collocation":""},{"id":50,"en":"benefit","pos":"v./n.","zh":"使受益；益处","collocation":"benefit from（从……受益）"},{"id":51,"en":"challenge","pos":"v./n.","zh":"挑战","collocation":""},{"id":52,"en":"choose","pos":"v.","zh":"选择","collocation":""},{"id":53,"en":"claim","pos":"v./n.","zh":"声称；主张","collocation":""},{"id":54,"en":"communicate","pos":"v.","zh":"交流；传达","collocation":""},{"id":55,"en":"compete","pos":"v.","zh":"竞争","collocation":""},{"id":56,"en":"complete","pos":"v./adj.","zh":"完成；完整的","collocation":""},{"id":57,"en":"concern","pos":"v./n.","zh":"涉及；使担忧；关切","collocation":"be concerned about（关心/担心）"},{"id":58,"en":"conduct","pos":"v./n.","zh":"实施；进行；行为","collocation":"conduct research/a survey（开展研究/调查）"},{"id":59,"en":"confirm","pos":"v.","zh":"确认；证实","collocation":""},{"id":60,"en":"consume","pos":"v.","zh":"消费；消耗","collocation":""},{"id":61,"en":"contain","pos":"v.","zh":"包含；容纳","collocation":""},{"id":62,"en":"continue","pos":"v.","zh":"继续","collocation":"continue doing（继续做）"},{"id":63,"en":"create","pos":"v.","zh":"创造；造成","collocation":""},{"id":64,"en":"decline","pos":"v./n.","zh":"下降；拒绝","collocation":"decline by/to（下降了/下降到）"},{"id":65,"en":"define","pos":"v.","zh":"定义；界定","collocation":""},{"id":66,"en":"demand","pos":"v./n.","zh":"要求；需求","collocation":"meet demand（满足需求）"},{"id":67,"en":"demonstrate","pos":"v.","zh":"证明；展示","collocation":""},{"id":68,"en":"discover","pos":"v.","zh":"发现","collocation":""},{"id":69,"en":"discuss","pos":"v.","zh":"讨论","collocation":""},{"id":70,"en":"distinguish","pos":"v.","zh":"区分；辨别","collocation":""},{"id":71,"en":"distribute","pos":"v.","zh":"分配；分发","collocation":""},{"id":72,"en":"emphasize","pos":"v.","zh":"强调","collocation":""},{"id":73,"en":"ensure","pos":"v.","zh":"确保","collocation":"ensure safety/quality（确保安全/质量）"},{"id":74,"en":"evaluate","pos":"v.","zh":"评估","collocation":"evaluate effectiveness（评估有效性）"},{"id":75,"en":"examine","pos":"v.","zh":"检查；考察","collocation":""},{"id":76,"en":"exist","pos":"v.","zh":"存在","collocation":""},{"id":77,"en":"expand","pos":"v.","zh":"扩大；扩展","collocation":""},{"id":78,"en":"experience","pos":"v./n.","zh":"经历；经验","collocation":""},{"id":79,"en":"focus","pos":"v./n.","zh":"集中；焦点","collocation":"focus on（专注于）"},{"id":80,"en":"identify","pos":"v.","zh":"识别；确认","collocation":"identify a problem/cause（识别问题/原因）"},{"id":81,"en":"ignore","pos":"v.","zh":"忽视","collocation":""},{"id":82,"en":"imagine","pos":"v.","zh":"想象","collocation":""},{"id":83,"en":"imply","pos":"v.","zh":"暗示；意味着","collocation":""},{"id":84,"en":"implement","pos":"v.","zh":"实施；执行","collocation":""},{"id":85,"en":"invest","pos":"v.","zh":"投资；投入","collocation":""},{"id":86,"en":"manage","pos":"v.","zh":"管理；设法做到","collocation":"manage to do（设法做到）"},{"id":87,"en":"measure","pos":"v./n.","zh":"测量；衡量；措施","collocation":""},{"id":88,"en":"observe","pos":"v.","zh":"观察；遵守","collocation":""},{"id":89,"en":"perform","pos":"v.","zh":"执行；表现；表演","collocation":"perform a task（执行任务）"},{"id":90,"en":"predict","pos":"v.","zh":"预测","collocation":""},{"id":91,"en":"prefer","pos":"v.","zh":"更喜欢","collocation":""},{"id":92,"en":"prepare","pos":"v.","zh":"准备","collocation":""},{"id":93,"en":"preserve","pos":"v.","zh":"保护；保存","collocation":"preserve culture/resources（保护文化/资源）"},{"id":94,"en":"protect","pos":"v.","zh":"保护","collocation":"protect ... from ...（保护……免受……）"},{"id":95,"en":"prove","pos":"v.","zh":"证明","collocation":""},{"id":96,"en":"pursue","pos":"v.","zh":"追求；继续从事","collocation":""},{"id":97,"en":"recommend","pos":"v.","zh":"推荐；建议","collocation":"recommend doing（建议做）"},{"id":98,"en":"reflect","pos":"v.","zh":"反映；思考","collocation":"reflect changes/trends（反映变化/趋势）"},{"id":99,"en":"replace","pos":"v.","zh":"替代；更换","collocation":""},{"id":100,"en":"reveal","pos":"v.","zh":"揭示；透露","collocation":""},{"id":101,"en":"raise","pos":"v.","zh":"提高；筹集；提出","collocation":"raise awareness of（提高对……的认识）；raise money for（为……筹款）；raise a question（提出问题）"},{"id":102,"en":"reach","pos":"v.","zh":"到达；达到","collocation":""},{"id":103,"en":"receive","pos":"v.","zh":"收到；接受","collocation":""},{"id":104,"en":"recover","pos":"v.","zh":"恢复；康复","collocation":""},{"id":105,"en":"refer","pos":"v.","zh":"提到；参考；涉及","collocation":"refer to（指的是；提到；参考）"},{"id":106,"en":"relate","pos":"v.","zh":"联系；有关","collocation":"relate to（与……有关）；be related to（与……相关）"},{"id":107,"en":"release","pos":"v.","zh":"释放；发布","collocation":""},{"id":108,"en":"remove","pos":"v.","zh":"移除；消除","collocation":""},{"id":109,"en":"report","pos":"v./n.","zh":"报告；报道","collocation":""},{"id":110,"en":"restrict","pos":"v.","zh":"限制","collocation":"restrict access/use（限制进入/使用）"},{"id":111,"en":"retain","pos":"v.","zh":"保留；保持","collocation":""},{"id":112,"en":"seek","pos":"v.","zh":"寻求；寻找","collocation":"seek help/advice（寻求帮助/建议）"},{"id":113,"en":"select","pos":"v.","zh":"选择；挑选","collocation":""},{"id":114,"en":"solve","pos":"v.","zh":"解决","collocation":"solve a problem（解决问题）"},{"id":115,"en":"spend","pos":"v.","zh":"花费","collocation":"spend time doing（花时间做）"},{"id":116,"en":"suffer","pos":"v.","zh":"遭受；忍受","collocation":"suffer from（遭受/患有）"},{"id":117,"en":"survive","pos":"v.","zh":"幸存；生存","collocation":""},{"id":118,"en":"tend","pos":"v.","zh":"倾向；照料","collocation":"tend to do（倾向于）"},{"id":119,"en":"threaten","pos":"v.","zh":"威胁","collocation":""},{"id":120,"en":"treat","pos":"v.","zh":"对待；治疗；处理","collocation":"treat A as B / treat a disease"},{"id":121,"en":"undertake","pos":"v.","zh":"承担；着手","collocation":""},{"id":122,"en":"vary","pos":"v.","zh":"变化；不同","collocation":""},{"id":123,"en":"waste","pos":"v./n.","zh":"浪费；废物","collocation":""},{"id":124,"en":"access","pos":"v./n.","zh":"获取；进入；使用权","collocation":"have access to（可以获得/使用）；gain access to（获得使用权/接触机会）"},{"id":125,"en":"account","pos":"v./n.","zh":"解释；占比；账户","collocation":"account for（占比；解释）；take ... into account（把……考虑在内）"},{"id":126,"en":"address","pos":"v./n.","zh":"处理；演讲；地址","collocation":"address a problem/issue（处理问题）"},{"id":127,"en":"advance","pos":"v./n.","zh":"推进；进步","collocation":""},{"id":128,"en":"attend","pos":"v.","zh":"参加；出席；照料","collocation":""},{"id":129,"en":"balance","pos":"v./n.","zh":"平衡","collocation":""},{"id":130,"en":"behave","pos":"v.","zh":"表现；举止","collocation":""},{"id":131,"en":"belong","pos":"v.","zh":"属于","collocation":""},{"id":132,"en":"concentrate","pos":"v.","zh":"集中注意力","collocation":"concentrate on（集中于）"},{"id":133,"en":"deal","pos":"v./n.","zh":"处理；交易","collocation":"deal with（处理）"},{"id":134,"en":"deliver","pos":"v.","zh":"递送；发表；履行","collocation":""},{"id":135,"en":"deserve","pos":"v.","zh":"值得；应得","collocation":""},{"id":136,"en":"engage","pos":"v.","zh":"从事；吸引；参与","collocation":"engage in（从事；参与）"},{"id":137,"en":"fail","pos":"v.","zh":"失败；未能","collocation":""},{"id":138,"en":"handle","pos":"v.","zh":"处理；操纵","collocation":""},{"id":139,"en":"limit","pos":"v./n.","zh":"限制；界限","collocation":""},{"id":140,"en":"participate","pos":"v.","zh":"参加；参与","collocation":"participate in（参加；参与）"},{"id":141,"en":"ability","pos":"n.","zh":"能力","collocation":""},{"id":142,"en":"advantage","pos":"n.","zh":"优势；有利条件","collocation":"take advantage of（利用）"},{"id":143,"en":"advice","pos":"n.","zh":"建议","collocation":""},{"id":144,"en":"amount","pos":"n.","zh":"数量；总额","collocation":"a large amount of（大量（不可数））"},{"id":145,"en":"area","pos":"n.","zh":"领域；地区","collocation":""},{"id":146,"en":"attitude","pos":"n.","zh":"态度","collocation":""},{"id":147,"en":"behavior","pos":"n.","zh":"行为","collocation":""},{"id":148,"en":"choice","pos":"n.","zh":"选择","collocation":""},{"id":149,"en":"condition","pos":"n.","zh":"条件；状况","collocation":""},{"id":150,"en":"consequence","pos":"n.","zh":"结果；后果","collocation":""},{"id":151,"en":"culture","pos":"n.","zh":"文化","collocation":""},{"id":152,"en":"effect","pos":"n.","zh":"影响；效果","collocation":"have an effect on（对……产生影响）; have a positive effect on（对……有积极影响）; have a negative effect on（对……有消极影响）"},{"id":153,"en":"environment","pos":"n.","zh":"环境","collocation":""},{"id":154,"en":"evidence","pos":"n.","zh":"证据","collocation":"evidence suggests/shows that..."},{"id":155,"en":"factor","pos":"n.","zh":"因素","collocation":""},{"id":156,"en":"feature","pos":"n./v.","zh":"特征；以…为特色","collocation":""},{"id":157,"en":"goal","pos":"n.","zh":"目标","collocation":""},{"id":158,"en":"issue","pos":"n.","zh":"问题；议题；期号","collocation":""},{"id":159,"en":"knowledge","pos":"n.","zh":"知识","collocation":""},{"id":160,"en":"level","pos":"n.","zh":"水平；层级","collocation":""},{"id":161,"en":"method","pos":"n.","zh":"方法","collocation":""},{"id":162,"en":"opportunity","pos":"n.","zh":"机会","collocation":"have an opportunity to do（有机会做）"},{"id":163,"en":"option","pos":"n.","zh":"选择；选项","collocation":""},{"id":164,"en":"pattern","pos":"n.","zh":"模式；规律","collocation":""},{"id":165,"en":"performance","pos":"n.","zh":"表现；绩效；演出","collocation":""},{"id":166,"en":"policy","pos":"n.","zh":"政策；方针","collocation":"government policy（政府政策）"},{"id":167,"en":"process","pos":"n.","zh":"过程；流程","collocation":""},{"id":168,"en":"purpose","pos":"n.","zh":"目的","collocation":"the purpose of（……的目的）"},{"id":169,"en":"quality","pos":"n.","zh":"质量；品质","collocation":""},{"id":170,"en":"reason","pos":"n.","zh":"原因；理性","collocation":"the reason for（……的原因）"},{"id":171,"en":"relationship","pos":"n.","zh":"关系","collocation":""},{"id":172,"en":"research","pos":"n./v.","zh":"研究","collocation":""},{"id":173,"en":"resource","pos":"n.","zh":"资源","collocation":"natural/human resources（自然/人力资源）"},{"id":174,"en":"role","pos":"n.","zh":"角色；作用","collocation":"play an important role in（在……中发挥重要作用）"},{"id":175,"en":"situation","pos":"n.","zh":"情况；局势","collocation":""},{"id":176,"en":"society","pos":"n.","zh":"社会","collocation":""},{"id":177,"en":"solution","pos":"n.","zh":"解决办法","collocation":""},{"id":178,"en":"source","pos":"n.","zh":"来源；源头","collocation":""},{"id":179,"en":"standard","pos":"n./adj.","zh":"标准；标准的","collocation":""},{"id":180,"en":"strategy","pos":"n.","zh":"策略；战略","collocation":"adopt a strategy（采用策略）"},{"id":181,"en":"system","pos":"n.","zh":"系统；体系","collocation":""},{"id":182,"en":"technology","pos":"n.","zh":"技术","collocation":""},{"id":183,"en":"trend","pos":"n.","zh":"趋势","collocation":""},{"id":184,"en":"value","pos":"n./v.","zh":"价值；重视","collocation":""},{"id":185,"en":"variety","pos":"n.","zh":"多样性；种类","collocation":"a variety of（各种各样的）"},{"id":186,"en":"attention","pos":"n.","zh":"注意；关注","collocation":"pay attention to（注意；关注）"},{"id":187,"en":"community","pos":"n.","zh":"社区；群体","collocation":""},{"id":188,"en":"competition","pos":"n.","zh":"竞争；比赛","collocation":""},{"id":189,"en":"decision","pos":"n.","zh":"决定","collocation":"make a decision（作决定）"},{"id":190,"en":"development","pos":"n.","zh":"发展；进展","collocation":""},{"id":191,"en":"difference","pos":"n.","zh":"差异","collocation":"make a difference（产生影响）"},{"id":192,"en":"education","pos":"n.","zh":"教育","collocation":""},{"id":193,"en":"effort","pos":"n.","zh":"努力","collocation":"make an effort（努力）"},{"id":194,"en":"employment","pos":"n.","zh":"就业；雇用","collocation":"employment opportunities（就业机会）"},{"id":195,"en":"energy","pos":"n.","zh":"能源；精力","collocation":""},{"id":196,"en":"government","pos":"n.","zh":"政府","collocation":""},{"id":197,"en":"growth","pos":"n.","zh":"增长；成长","collocation":""},{"id":198,"en":"health","pos":"n.","zh":"健康","collocation":""},{"id":199,"en":"information","pos":"n.","zh":"信息","collocation":""},{"id":200,"en":"interest","pos":"n.","zh":"兴趣；利息；利益","collocation":""},{"id":201,"en":"market","pos":"n.","zh":"市场","collocation":""},{"id":202,"en":"population","pos":"n.","zh":"人口；群体","collocation":""},{"id":203,"en":"problem","pos":"n.","zh":"问题","collocation":"solve a problem（解决问题）"},{"id":204,"en":"product","pos":"n.","zh":"产品；产物","collocation":""},{"id":205,"en":"program","pos":"n.","zh":"项目；计划；节目","collocation":""},{"id":206,"en":"service","pos":"n.","zh":"服务","collocation":""},{"id":207,"en":"skill","pos":"n.","zh":"技能","collocation":""},{"id":208,"en":"study","pos":"n./v.","zh":"研究；学习","collocation":""},{"id":209,"en":"activity","pos":"n.","zh":"活动","collocation":""},{"id":210,"en":"industry","pos":"n.","zh":"行业；工业","collocation":""},{"id":211,"en":"cost","pos":"n./v.","zh":"成本；花费","collocation":""},{"id":212,"en":"risk","pos":"n./v.","zh":"风险；冒险","collocation":"reduce/increase the risk of（降低/提高……风险）"},{"id":213,"en":"change","pos":"n./v.","zh":"变化；改变","collocation":""},{"id":214,"en":"disease","pos":"n.","zh":"疾病","collocation":""},{"id":215,"en":"practice","pos":"n./v.","zh":"实践；练习","collocation":"in practice（实际上；在实践中）"},{"id":216,"en":"progress","pos":"n./v.","zh":"进步；进展","collocation":""},{"id":217,"en":"organization","pos":"n.","zh":"组织；机构","collocation":""},{"id":218,"en":"problem-solving","pos":"n.","zh":"解决问题","collocation":""},{"id":219,"en":"responsibility","pos":"n.","zh":"责任","collocation":"take responsibility for（承担责任）"},{"id":220,"en":"success","pos":"n.","zh":"成功","collocation":""},{"id":221,"en":"available","pos":"adj.","zh":"可获得的；有空的","collocation":"be available to sb（某人可获得/使用）；be available for sth（可用于……）"},{"id":222,"en":"aware","pos":"adj.","zh":"意识到的","collocation":"be aware of（意识到）"},{"id":223,"en":"basic","pos":"adj.","zh":"基本的","collocation":""},{"id":224,"en":"certain","pos":"adj.","zh":"确定的；某些","collocation":""},{"id":225,"en":"common","pos":"adj.","zh":"常见的；共同的","collocation":""},{"id":226,"en":"complex","pos":"adj.","zh":"复杂的","collocation":""},{"id":227,"en":"convenient","pos":"adj.","zh":"方便的","collocation":""},{"id":228,"en":"effective","pos":"adj.","zh":"有效的","collocation":""},{"id":229,"en":"essential","pos":"adj.","zh":"必不可少的；本质的","collocation":"be essential to/for（对……必不可少）"},{"id":230,"en":"general","pos":"adj.","zh":"一般的；总体的","collocation":"in general（总体上）"},{"id":231,"en":"important","pos":"adj.","zh":"重要的","collocation":"play an important role in（在……中发挥重要作用）"},{"id":232,"en":"likely","pos":"adj./adv.","zh":"可能的；很可能","collocation":"be likely to do（很可能做……）"},{"id":233,"en":"major","pos":"adj./n.","zh":"主要的；专业","collocation":""},{"id":234,"en":"necessary","pos":"adj.","zh":"必要的","collocation":"be necessary for（对……必要）"},{"id":235,"en":"particular","pos":"adj.","zh":"特定的；特别的","collocation":"in particular（尤其；特别）"},{"id":236,"en":"possible","pos":"adj.","zh":"可能的","collocation":""},{"id":237,"en":"practical","pos":"adj.","zh":"实际的；实用的","collocation":""},{"id":238,"en":"primary","pos":"adj.","zh":"主要的；首要的","collocation":""},{"id":239,"en":"recent","pos":"adj.","zh":"最近的","collocation":"in recent years（近年来）"},{"id":240,"en":"responsible","pos":"adj.","zh":"负责的；导致…的","collocation":"be responsible for（对……负责；是……的原因）"},{"id":241,"en":"significant","pos":"adj.","zh":"重要的；显著的","collocation":""},{"id":242,"en":"similar","pos":"adj.","zh":"相似的","collocation":"be similar to（与……相似）"},{"id":243,"en":"simple","pos":"adj.","zh":"简单的","collocation":""},{"id":244,"en":"social","pos":"adj.","zh":"社会的；社交的","collocation":""},{"id":245,"en":"specific","pos":"adj.","zh":"具体的；特定的","collocation":""},{"id":246,"en":"successful","pos":"adj.","zh":"成功的","collocation":""},{"id":247,"en":"traditional","pos":"adj.","zh":"传统的","collocation":""},{"id":248,"en":"typical","pos":"adj.","zh":"典型的","collocation":""},{"id":249,"en":"useful","pos":"adj.","zh":"有用的","collocation":""},{"id":250,"en":"valuable","pos":"adj.","zh":"有价值的","collocation":""},{"id":251,"en":"various","pos":"adj.","zh":"各种各样的","collocation":""},{"id":252,"en":"willing","pos":"adj.","zh":"愿意的","collocation":"be willing to（愿意）"},{"id":253,"en":"additional","pos":"adj.","zh":"额外的","collocation":""},{"id":254,"en":"appropriate","pos":"adj.","zh":"合适的","collocation":""},{"id":255,"en":"average","pos":"adj./n.","zh":"平均的；平均数","collocation":""},{"id":256,"en":"beneficial","pos":"adj.","zh":"有益的","collocation":"be beneficial to（对……有益）"},{"id":257,"en":"capable","pos":"adj.","zh":"有能力的","collocation":"be capable of doing（有能力做……）"},{"id":258,"en":"current","pos":"adj./n.","zh":"当前的；水流/电流；潮流","collocation":""},{"id":259,"en":"difficult","pos":"adj.","zh":"困难的","collocation":""},{"id":260,"en":"economic","pos":"adj.","zh":"经济的；经济学的","collocation":""},{"id":261,"en":"educational","pos":"adj.","zh":"教育的","collocation":""},{"id":262,"en":"environmental","pos":"adj.","zh":"环境的","collocation":""},{"id":263,"en":"financial","pos":"adj.","zh":"金融的；财务的","collocation":""},{"id":264,"en":"individual","pos":"adj./n.","zh":"个人的；个人","collocation":""},{"id":265,"en":"local","pos":"adj.","zh":"当地的","collocation":""},{"id":266,"en":"natural","pos":"adj.","zh":"自然的；天然的","collocation":""},{"id":267,"en":"physical","pos":"adj.","zh":"身体的；物理的","collocation":""},{"id":268,"en":"positive","pos":"adj.","zh":"积极的；正面的","collocation":"have a positive effect on（对……有积极影响）"},{"id":269,"en":"negative","pos":"adj.","zh":"消极的；负面的","collocation":"have a negative effect on（对……有消极影响）"},{"id":270,"en":"professional","pos":"adj./n.","zh":"专业的；专业人士","collocation":""},{"id":271,"en":"public","pos":"adj./n.","zh":"公共的；公众","collocation":""},{"id":272,"en":"reliable","pos":"adj.","zh":"可靠的","collocation":""},{"id":273,"en":"serious","pos":"adj.","zh":"严重的；认真的","collocation":""},{"id":274,"en":"special","pos":"adj.","zh":"特殊的","collocation":""},{"id":275,"en":"technical","pos":"adj.","zh":"技术的；专业性的","collocation":""},{"id":276,"en":"unique","pos":"adj.","zh":"独特的","collocation":""},{"id":277,"en":"widespread","pos":"adj.","zh":"广泛的","collocation":""},{"id":278,"en":"potential","pos":"adj./n.","zh":"潜在的；潜力","collocation":""},{"id":279,"en":"relevant","pos":"adj.","zh":"相关的","collocation":"be relevant to"},{"id":280,"en":"efficient","pos":"adj.","zh":"高效的","collocation":""},{"id":281,"en":"actually","pos":"adv.","zh":"实际上","collocation":""},{"id":282,"en":"generally","pos":"adv.","zh":"通常；总体上","collocation":""},{"id":283,"en":"gradually","pos":"adv.","zh":"逐渐地","collocation":""},{"id":284,"en":"increasingly","pos":"adv.","zh":"越来越多地","collocation":""},{"id":285,"en":"mainly","pos":"adv.","zh":"主要地","collocation":""},{"id":286,"en":"particularly","pos":"adv.","zh":"尤其；特别","collocation":""},{"id":287,"en":"probably","pos":"adv.","zh":"很可能","collocation":""},{"id":288,"en":"relatively","pos":"adv.","zh":"相对地","collocation":""},{"id":289,"en":"significantly","pos":"adv.","zh":"显著地","collocation":"increase/decrease significantly（显著增加/下降）"},{"id":290,"en":"simply","pos":"adv.","zh":"简单地；仅仅","collocation":""},{"id":291,"en":"therefore","pos":"adv.","zh":"因此","collocation":"therefore = 因此（结果关系）"},{"id":292,"en":"however","pos":"adv.","zh":"然而","collocation":"however = 然而（转折关系）"},{"id":293,"en":"moreover","pos":"adv.","zh":"此外；而且","collocation":""},{"id":294,"en":"meanwhile","pos":"adv.","zh":"与此同时","collocation":""},{"id":295,"en":"otherwise","pos":"adv.","zh":"否则；在其他方面","collocation":""},{"id":296,"en":"instead","pos":"adv.","zh":"反而；代替","collocation":"instead of（而不是；代替）"},{"id":297,"en":"eventually","pos":"adv.","zh":"最终","collocation":""},{"id":298,"en":"recently","pos":"adv.","zh":"最近","collocation":""},{"id":299,"en":"currently","pos":"adv.","zh":"目前","collocation":""},{"id":300,"en":"nearly","pos":"adv.","zh":"几乎；接近","collocation":""},{"id":301,"en":"analysis","pos":"n.","zh":"分析","collocation":""},{"id":302,"en":"assumption","pos":"n.","zh":"假设；设想","collocation":""},{"id":303,"en":"authority","pos":"n.","zh":"权威；当局","collocation":""},{"id":304,"en":"category","pos":"n.","zh":"类别","collocation":""},{"id":305,"en":"circumstance","pos":"n.","zh":"情况；环境","collocation":""},{"id":306,"en":"concept","pos":"n.","zh":"概念","collocation":""},{"id":307,"en":"context","pos":"n.","zh":"语境；背景","collocation":""},{"id":308,"en":"data","pos":"n.","zh":"数据","collocation":""},{"id":309,"en":"debate","pos":"n./v.","zh":"辩论；讨论","collocation":""},{"id":310,"en":"definition","pos":"n.","zh":"定义","collocation":""},{"id":311,"en":"distribution","pos":"n.","zh":"分配；分布","collocation":""},{"id":312,"en":"economy","pos":"n.","zh":"经济","collocation":""},{"id":313,"en":"function","pos":"n./v.","zh":"功能；起作用","collocation":""},{"id":314,"en":"impact","pos":"n./v.","zh":"影响；冲击","collocation":"have an impact on（对……产生影响）"},{"id":315,"en":"institution","pos":"n.","zh":"机构；制度","collocation":""},{"id":316,"en":"principle","pos":"n.","zh":"原则；原理","collocation":""},{"id":317,"en":"structure","pos":"n./v.","zh":"结构；构成","collocation":""},{"id":318,"en":"theory","pos":"n.","zh":"理论","collocation":""},{"id":319,"en":"phenomenon","pos":"n.","zh":"现象","collocation":""},{"id":320,"en":"perspective","pos":"n.","zh":"观点；视角","collocation":"from my perspective（在我看来）; from a ... perspective（从……角度）"},{"id":321,"en":"assess","pos":"v.","zh":"评估","collocation":""},{"id":322,"en":"attribute","pos":"v./n.","zh":"归因于；属性","collocation":"attribute A to B（把A归因于B）"},{"id":323,"en":"calculate","pos":"v.","zh":"计算","collocation":""},{"id":324,"en":"classify","pos":"v.","zh":"分类","collocation":""},{"id":325,"en":"conclude","pos":"v.","zh":"得出结论；结束","collocation":""},{"id":326,"en":"contrast","pos":"v./n.","zh":"对比","collocation":"in contrast（相比之下）"},{"id":327,"en":"derive","pos":"v.","zh":"获得；源自","collocation":"derive from（源自）"},{"id":328,"en":"detect","pos":"v.","zh":"察觉；检测","collocation":""},{"id":329,"en":"estimate","pos":"v./n.","zh":"估计","collocation":""},{"id":330,"en":"expose","pos":"v.","zh":"暴露；揭露","collocation":"be exposed to"},{"id":331,"en":"interpret","pos":"v.","zh":"解释；理解；口译","collocation":""},{"id":332,"en":"modify","pos":"v.","zh":"修改；调整","collocation":""},{"id":333,"en":"monitor","pos":"v./n.","zh":"监测；显示器","collocation":""},{"id":334,"en":"perceive","pos":"v.","zh":"感知；认为","collocation":""},{"id":335,"en":"regulate","pos":"v.","zh":"监管；调节","collocation":""},{"id":336,"en":"transform","pos":"v.","zh":"改变；转变","collocation":""},{"id":337,"en":"verify","pos":"v.","zh":"核实；验证","collocation":""},{"id":338,"en":"analyze","pos":"v.","zh":"分析","collocation":""},{"id":339,"en":"generate","pos":"v.","zh":"产生；生成","collocation":""},{"id":340,"en":"justify","pos":"v.","zh":"证明…有道理；为…辩护","collocation":""},{"id":341,"en":"academic","pos":"adj.","zh":"学术的","collocation":"academic performance（学业表现）"},{"id":342,"en":"career","pos":"n.","zh":"职业；生涯","collocation":"career development（职业发展）"},{"id":343,"en":"campus","pos":"n.","zh":"校园","collocation":""},{"id":344,"en":"citizen","pos":"n.","zh":"公民","collocation":""},{"id":345,"en":"course","pos":"n.","zh":"课程；过程","collocation":""},{"id":346,"en":"degree","pos":"n.","zh":"学位；程度","collocation":""},{"id":347,"en":"discipline","pos":"n.","zh":"学科；纪律；自律","collocation":""},{"id":348,"en":"graduate","pos":"n./v.","zh":"毕业生；毕业","collocation":""},{"id":349,"en":"lecture","pos":"n./v.","zh":"讲座；讲课","collocation":""},{"id":350,"en":"professor","pos":"n.","zh":"教授","collocation":""},{"id":351,"en":"training","pos":"n.","zh":"训练；培训","collocation":""},{"id":352,"en":"university","pos":"n.","zh":"大学","collocation":""},{"id":353,"en":"workplace","pos":"n.","zh":"工作场所","collocation":""},{"id":354,"en":"employer","pos":"n.","zh":"雇主","collocation":""},{"id":355,"en":"employee","pos":"n.","zh":"雇员","collocation":""},{"id":356,"en":"salary","pos":"n.","zh":"薪水","collocation":""},{"id":357,"en":"income","pos":"n.","zh":"收入","collocation":""},{"id":358,"en":"profession","pos":"n.","zh":"职业；专业","collocation":""},{"id":359,"en":"qualification","pos":"n.","zh":"资格；资历","collocation":""},{"id":360,"en":"scholarship","pos":"n.","zh":"奖学金；学问/学术研究","collocation":""},{"id":361,"en":"climate","pos":"n.","zh":"气候","collocation":"climate change（气候变化）"},{"id":362,"en":"emission","pos":"n.","zh":"排放；散发","collocation":""},{"id":363,"en":"pollution","pos":"n.","zh":"污染","collocation":"air/water pollution（空气/水污染）"},{"id":364,"en":"recycle","pos":"v.","zh":"回收利用","collocation":""},{"id":365,"en":"renewable","pos":"adj.","zh":"可再生的","collocation":""},{"id":366,"en":"species","pos":"n.","zh":"物种","collocation":""},{"id":367,"en":"wildlife","pos":"n.","zh":"野生动物","collocation":""},{"id":368,"en":"agriculture","pos":"n.","zh":"农业","collocation":""},{"id":369,"en":"chemical","pos":"n./adj.","zh":"化学品；化学的","collocation":""},{"id":370,"en":"material","pos":"n./adj.","zh":"材料；物质的","collocation":""},{"id":371,"en":"substance","pos":"n.","zh":"物质","collocation":""},{"id":372,"en":"experiment","pos":"n./v.","zh":"实验","collocation":""},{"id":373,"en":"scientific","pos":"adj.","zh":"科学的","collocation":""},{"id":374,"en":"temperature","pos":"n.","zh":"温度","collocation":""},{"id":375,"en":"medicine","pos":"n.","zh":"药物；医学","collocation":""},{"id":376,"en":"patient","pos":"n./adj.","zh":"病人；有耐心的","collocation":""},{"id":377,"en":"treatment","pos":"n.","zh":"治疗；处理","collocation":""},{"id":378,"en":"mental","pos":"adj.","zh":"心理的；精神的","collocation":""},{"id":379,"en":"nutrition","pos":"n.","zh":"营养","collocation":""},{"id":380,"en":"sustainable","pos":"adj.","zh":"可持续的","collocation":"sustainable development（可持续发展）"},{"id":381,"en":"business","pos":"n.","zh":"商业；企业","collocation":""},{"id":382,"en":"company","pos":"n.","zh":"公司；陪伴","collocation":""},{"id":383,"en":"consumer","pos":"n.","zh":"消费者","collocation":"consumer behavior（消费者行为）"},{"id":384,"en":"finance","pos":"n./v.","zh":"金融；为…提供资金","collocation":""},{"id":385,"en":"investment","pos":"n.","zh":"投资","collocation":"make an investment in（投资于）"},{"id":386,"en":"price","pos":"n.","zh":"价格","collocation":""},{"id":387,"en":"profit","pos":"n./v.","zh":"利润；获利","collocation":""},{"id":388,"en":"revenue","pos":"n.","zh":"收入；税收","collocation":""},{"id":389,"en":"sales","pos":"n.","zh":"销售额；销售","collocation":""},{"id":390,"en":"trade","pos":"n./v.","zh":"贸易；交易","collocation":""},{"id":391,"en":"customer","pos":"n.","zh":"顾客","collocation":""},{"id":392,"en":"supply","pos":"n./v.","zh":"供应；供给","collocation":""},{"id":393,"en":"budget","pos":"n./v.","zh":"预算","collocation":""},{"id":394,"en":"purchase","pos":"n./v.","zh":"购买","collocation":""},{"id":395,"en":"commercial","pos":"adj./n.","zh":"商业的；广告","collocation":""},{"id":396,"en":"contract","pos":"n./v.","zh":"合同；签约；收缩","collocation":""},{"id":397,"en":"transaction","pos":"n.","zh":"交易；业务","collocation":""},{"id":398,"en":"affordable","pos":"adj.","zh":"负担得起的","collocation":""},{"id":399,"en":"expense","pos":"n.","zh":"费用；开支","collocation":""},{"id":400,"en":"enterprise","pos":"n.","zh":"企业；事业","collocation":""},{"id":401,"en":"device","pos":"n.","zh":"设备；装置","collocation":""},{"id":402,"en":"digital","pos":"adj.","zh":"数字的","collocation":""},{"id":403,"en":"internet","pos":"n.","zh":"互联网","collocation":""},{"id":404,"en":"network","pos":"n./v.","zh":"网络；建立联系","collocation":""},{"id":405,"en":"online","pos":"adj./adv.","zh":"在线的；在线","collocation":""},{"id":406,"en":"platform","pos":"n.","zh":"平台","collocation":""},{"id":407,"en":"privacy","pos":"n.","zh":"隐私","collocation":"protect privacy（保护隐私）"},{"id":408,"en":"security","pos":"n.","zh":"安全；保障","collocation":"data security concerns（数据安全问题）"},{"id":409,"en":"software","pos":"n.","zh":"软件","collocation":""},{"id":410,"en":"media","pos":"n.","zh":"媒体","collocation":""},{"id":411,"en":"communication","pos":"n.","zh":"交流；通信","collocation":""},{"id":412,"en":"screen","pos":"n./v.","zh":"屏幕；筛查","collocation":""},{"id":413,"en":"mobile","pos":"adj./n.","zh":"移动的；移动设备","collocation":""},{"id":414,"en":"artificial","pos":"adj.","zh":"人工的；人造的","collocation":""},{"id":415,"en":"intelligence","pos":"n.","zh":"智力；情报","collocation":""},{"id":416,"en":"machine","pos":"n.","zh":"机器","collocation":""},{"id":417,"en":"automation","pos":"n.","zh":"自动化","collocation":""},{"id":418,"en":"innovation","pos":"n.","zh":"创新","collocation":""},{"id":419,"en":"virtual","pos":"adj.","zh":"虚拟的；实质上的","collocation":""},{"id":420,"en":"database","pos":"n.","zh":"数据库","collocation":""},{"id":421,"en":"diet","pos":"n.","zh":"饮食","collocation":""},{"id":422,"en":"exercise","pos":"n./v.","zh":"锻炼；练习","collocation":""},{"id":423,"en":"habit","pos":"n.","zh":"习惯","collocation":""},{"id":424,"en":"healthy","pos":"adj.","zh":"健康的","collocation":""},{"id":425,"en":"stress","pos":"n./v.","zh":"压力；强调","collocation":"deal/cope with stress（应对压力）"},{"id":426,"en":"sleep","pos":"n./v.","zh":"睡眠；睡觉","collocation":""},{"id":427,"en":"weight","pos":"n.","zh":"体重；重量","collocation":""},{"id":428,"en":"safety","pos":"n.","zh":"安全","collocation":""},{"id":429,"en":"injury","pos":"n.","zh":"伤害；损伤","collocation":""},{"id":430,"en":"medical","pos":"adj.","zh":"医疗的；医学的","collocation":""},{"id":431,"en":"doctor","pos":"n.","zh":"医生","collocation":""},{"id":432,"en":"hospital","pos":"n.","zh":"医院","collocation":""},{"id":433,"en":"symptom","pos":"n.","zh":"症状","collocation":""},{"id":434,"en":"lifestyle","pos":"n.","zh":"生活方式","collocation":""},{"id":435,"en":"pressure","pos":"n.","zh":"压力","collocation":""},{"id":436,"en":"therapy","pos":"n.","zh":"治疗；疗法","collocation":""},{"id":437,"en":"preventive","pos":"adj.","zh":"预防性的","collocation":""},{"id":438,"en":"fitness","pos":"n.","zh":"健康；合适性/胜任程度","collocation":""},{"id":439,"en":"well-being","pos":"n.","zh":"健康；幸福","collocation":""},{"id":440,"en":"infection","pos":"n.","zh":"感染","collocation":""},{"id":441,"en":"tradition","pos":"n.","zh":"传统","collocation":""},{"id":442,"en":"history","pos":"n.","zh":"历史","collocation":""},{"id":443,"en":"generation","pos":"n.","zh":"一代；产生","collocation":""},{"id":444,"en":"family","pos":"n.","zh":"家庭","collocation":""},{"id":445,"en":"parent","pos":"n.","zh":"父母；家长","collocation":""},{"id":446,"en":"child","pos":"n.","zh":"孩子","collocation":""},{"id":447,"en":"volunteer","pos":"n./v.","zh":"志愿者；自愿","collocation":""},{"id":448,"en":"charity","pos":"n.","zh":"慈善；慈善机构","collocation":""},{"id":449,"en":"equality","pos":"n.","zh":"平等","collocation":""},{"id":450,"en":"inequality","pos":"n.","zh":"不平等","collocation":"reduce inequality（减少不平等）"},{"id":451,"en":"diversity","pos":"n.","zh":"多样性","collocation":""},{"id":452,"en":"minority","pos":"n.","zh":"少数；少数群体","collocation":"a minority of（少数）"},{"id":453,"en":"majority","pos":"n.","zh":"多数","collocation":"the majority of（大多数……）"},{"id":454,"en":"gender","pos":"n.","zh":"性别","collocation":""},{"id":455,"en":"freedom","pos":"n.","zh":"自由","collocation":""},{"id":456,"en":"right","pos":"n./adj.","zh":"权利；正确的","collocation":""},{"id":457,"en":"law","pos":"n.","zh":"法律","collocation":""},{"id":458,"en":"rule","pos":"n./v.","zh":"规则；统治","collocation":""},{"id":459,"en":"civilization","pos":"n.","zh":"文明","collocation":""},{"id":460,"en":"heritage","pos":"n.","zh":"遗产；传统","collocation":""},{"id":461,"en":"crucial","pos":"adj.","zh":"至关重要的","collocation":"be crucial to/for（对……至关重要）"},{"id":462,"en":"vital","pos":"adj.","zh":"至关重要的；生命的","collocation":""},{"id":463,"en":"sufficient","pos":"adj.","zh":"足够的","collocation":""},{"id":464,"en":"inadequate","pos":"adj.","zh":"不足的；不充分的","collocation":""},{"id":465,"en":"enormous","pos":"adj.","zh":"巨大的","collocation":""},{"id":466,"en":"tiny","pos":"adj.","zh":"极小的","collocation":""},{"id":467,"en":"frequent","pos":"adj.","zh":"频繁的","collocation":""},{"id":468,"en":"rare","pos":"adj.","zh":"罕见的","collocation":""},{"id":469,"en":"ordinary","pos":"adj.","zh":"普通的","collocation":""},{"id":470,"en":"extraordinary","pos":"adj.","zh":"非凡的","collocation":""},{"id":471,"en":"permanent","pos":"adj.","zh":"永久的","collocation":""},{"id":472,"en":"temporary","pos":"adj.","zh":"暂时的","collocation":""},{"id":473,"en":"immediate","pos":"adj.","zh":"立即的；直接的","collocation":""},{"id":474,"en":"gradual","pos":"adj.","zh":"逐渐的","collocation":""},{"id":475,"en":"direct","pos":"adj./adv.","zh":"直接的","collocation":""},{"id":476,"en":"indirect","pos":"adj.","zh":"间接的","collocation":""},{"id":477,"en":"obvious","pos":"adj.","zh":"明显的","collocation":""},{"id":478,"en":"unclear","pos":"adj.","zh":"不清楚的","collocation":""},{"id":479,"en":"accurate","pos":"adj.","zh":"准确的","collocation":"accurate information/data（准确信息/数据）"},{"id":480,"en":"precise","pos":"adj.","zh":"精确的","collocation":""},{"id":481,"en":"arrange","pos":"v.","zh":"安排；整理","collocation":""},{"id":482,"en":"borrow","pos":"v.","zh":"借入","collocation":""},{"id":483,"en":"cancel","pos":"v.","zh":"取消","collocation":""},{"id":484,"en":"charge","pos":"v./n.","zh":"收费；指控；负责；费用","collocation":"charge sb for sth（向某人收取……费用）"},{"id":485,"en":"contact","pos":"v./n.","zh":"联系；接触","collocation":""},{"id":486,"en":"delay","pos":"v./n.","zh":"延迟","collocation":""},{"id":487,"en":"invite","pos":"v.","zh":"邀请","collocation":""},{"id":488,"en":"order","pos":"v./n.","zh":"订购；命令；顺序","collocation":""},{"id":489,"en":"pay","pos":"v.","zh":"支付","collocation":"pay attention to（注意）"},{"id":490,"en":"plan","pos":"v./n.","zh":"计划","collocation":""},{"id":491,"en":"rent","pos":"v./n.","zh":"租用；租金","collocation":""},{"id":492,"en":"reserve","pos":"v./n.","zh":"预订；保留","collocation":""},{"id":493,"en":"return","pos":"v./n.","zh":"返回；归还；回报","collocation":""},{"id":494,"en":"schedule","pos":"n./v.","zh":"日程；安排","collocation":"on schedule（按计划）"},{"id":495,"en":"share","pos":"v./n.","zh":"分享；份额","collocation":""},{"id":496,"en":"travel","pos":"v./n.","zh":"旅行","collocation":""},{"id":497,"en":"visit","pos":"v./n.","zh":"访问；参观","collocation":""},{"id":498,"en":"wait","pos":"v.","zh":"等待","collocation":""},{"id":499,"en":"wonder","pos":"v./n.","zh":"想知道；奇迹","collocation":""},{"id":500,"en":"complain","pos":"v.","zh":"抱怨","collocation":""},{"id":501,"en":"ancient","pos":"adj.","zh":"古代的","collocation":""},{"id":502,"en":"modern","pos":"adj.","zh":"现代的","collocation":""},{"id":503,"en":"urban","pos":"adj.","zh":"城市的","collocation":""},{"id":504,"en":"rural","pos":"adj.","zh":"农村的","collocation":""},{"id":505,"en":"region","pos":"n.","zh":"地区；区域","collocation":""},{"id":506,"en":"nation","pos":"n.","zh":"国家；民族","collocation":""},{"id":507,"en":"national","pos":"adj.","zh":"国家的；全国的","collocation":""},{"id":508,"en":"international","pos":"adj.","zh":"国际的","collocation":""},{"id":509,"en":"global","pos":"adj.","zh":"全球的","collocation":""},{"id":510,"en":"transportation","pos":"n.","zh":"交通运输","collocation":""},{"id":511,"en":"infrastructure","pos":"n.","zh":"基础设施","collocation":"public infrastructure（公共基础设施）"},{"id":512,"en":"convenience","pos":"n.","zh":"便利","collocation":""},{"id":513,"en":"achievement","pos":"n.","zh":"成就","collocation":""},{"id":514,"en":"century","pos":"n.","zh":"世纪","collocation":""},{"id":515,"en":"festival","pos":"n.","zh":"节日","collocation":""},{"id":516,"en":"custom","pos":"n.","zh":"习俗；惯例","collocation":"local/traditional custom（当地/传统习俗）；customs = 海关"},{"id":517,"en":"tourism","pos":"n.","zh":"旅游业","collocation":""},{"id":518,"en":"destination","pos":"n.","zh":"目的地","collocation":""},{"id":519,"en":"architecture","pos":"n.","zh":"建筑；建筑风格","collocation":""},{"id":520,"en":"modernization","pos":"n.","zh":"现代化","collocation":""},{"id":521,"en":"abandon","pos":"v.","zh":"放弃；抛弃","collocation":""},{"id":522,"en":"advocate","pos":"v./n.","zh":"提倡；倡导者","collocation":""},{"id":523,"en":"alter","pos":"v.","zh":"改变","collocation":""},{"id":524,"en":"alternative","pos":"n./adj.","zh":"替代选择；可替代的","collocation":"an alternative to（……的替代方案）"},{"id":525,"en":"apparent","pos":"adj.","zh":"明显的；表面上的","collocation":""},{"id":526,"en":"appeal","pos":"v./n.","zh":"吸引；呼吁；上诉","collocation":"appeal to（吸引；呼吁）"},{"id":527,"en":"aspect","pos":"n.","zh":"方面","collocation":""},{"id":528,"en":"associate","pos":"v./n.","zh":"联系；同事","collocation":""},{"id":529,"en":"barrier","pos":"n.","zh":"障碍；屏障","collocation":""},{"id":530,"en":"capacity","pos":"n.","zh":"能力；容量","collocation":""},{"id":531,"en":"commitment","pos":"n.","zh":"承诺；投入","collocation":""},{"id":532,"en":"compensate","pos":"v.","zh":"补偿；弥补","collocation":""},{"id":533,"en":"consistent","pos":"adj.","zh":"一致的；持续的","collocation":"be consistent with（与……一致）"},{"id":534,"en":"controversy","pos":"n.","zh":"争议","collocation":""},{"id":535,"en":"convince","pos":"v.","zh":"使信服","collocation":""},{"id":536,"en":"critical","pos":"adj.","zh":"关键的；批判的；严重的","collocation":""},{"id":537,"en":"despite","pos":"prep.","zh":"尽管","collocation":"despite + n./doing（尽管……）"},{"id":538,"en":"emerge","pos":"v.","zh":"出现；显露","collocation":""},{"id":539,"en":"enhance","pos":"v.","zh":"增强；提高","collocation":""},{"id":540,"en":"fundamental","pos":"adj.","zh":"基本的；根本的","collocation":"be fundamental to（对……是根本的）"},{"id":541,"en":"equivalent","pos":"adj./n.","zh":"相等的；等价物","collocation":"be equivalent to（等同于）"},{"id":542,"en":"excessive","pos":"adj.","zh":"过多的；过度的","collocation":""},{"id":543,"en":"flexible","pos":"adj.","zh":"灵活的","collocation":""},{"id":544,"en":"guarantee","pos":"v./n.","zh":"保证","collocation":""},{"id":545,"en":"highlight","pos":"v./n.","zh":"强调；亮点","collocation":""},{"id":546,"en":"hypothesis","pos":"n.","zh":"假设","collocation":""},{"id":547,"en":"inevitable","pos":"adj.","zh":"不可避免的","collocation":""},{"id":548,"en":"obstacle","pos":"n.","zh":"障碍","collocation":""},{"id":549,"en":"outcome","pos":"n.","zh":"结果","collocation":""},{"id":550,"en":"priority","pos":"n.","zh":"优先事项","collocation":"give priority to（优先考虑）"},{"id":551,"en":"proportion","pos":"n.","zh":"比例","collocation":"a large/small proportion of（很大/很小比例）"},{"id":552,"en":"range","pos":"n./v.","zh":"范围；排列","collocation":"range from A to B"},{"id":553,"en":"response","pos":"n.","zh":"回应；反应","collocation":""},{"id":554,"en":"shift","pos":"v./n.","zh":"转变；轮班","collocation":"a shift from A to B（从A转向B）"},{"id":555,"en":"stable","pos":"adj.","zh":"稳定的","collocation":""},{"id":556,"en":"substantial","pos":"adj.","zh":"大量的；实质的","collocation":""},{"id":557,"en":"transfer","pos":"v./n.","zh":"转移；转让","collocation":"transfer A to B（把A转移到B）"},{"id":558,"en":"ultimate","pos":"adj.","zh":"最终的；根本的","collocation":""},{"id":559,"en":"valid","pos":"adj.","zh":"有效的；合理的","collocation":""},{"id":560,"en":"welfare","pos":"n.","zh":"福利；福祉","collocation":""},{"id":561,"en":"adequate","pos":"adj.","zh":"足够的；适当的","collocation":""},{"id":562,"en":"annual","pos":"adj.","zh":"每年的；年度的","collocation":""},{"id":563,"en":"approximately","pos":"adv.","zh":"大约","collocation":"approximately 20%（大约20%）"},{"id":564,"en":"awareness","pos":"n.","zh":"意识","collocation":"raise awareness of（提高对……的认识）"},{"id":565,"en":"constant","pos":"adj./n.","zh":"持续的；常数","collocation":""},{"id":566,"en":"dense","pos":"adj.","zh":"密集的；浓厚的","collocation":""},{"id":567,"en":"domestic","pos":"adj.","zh":"国内的；家庭的","collocation":""},{"id":568,"en":"dramatic","pos":"adj.","zh":"显著的；戏剧性的","collocation":""},{"id":569,"en":"former","pos":"adj./n.","zh":"以前的；前者","collocation":""},{"id":570,"en":"frequently","pos":"adv.","zh":"频繁地","collocation":""},{"id":571,"en":"independent","pos":"adj.","zh":"独立的","collocation":""},{"id":572,"en":"initial","pos":"adj.","zh":"最初的","collocation":""},{"id":573,"en":"overall","pos":"adj./adv.","zh":"总体的；总体上","collocation":"overall trend/result（总体趋势/结果）"},{"id":574,"en":"random","pos":"adj.","zh":"随机的","collocation":""},{"id":575,"en":"reasonable","pos":"adj.","zh":"合理的","collocation":"reasonable explanation/price（合理解释/价格）"},{"id":576,"en":"remote","pos":"adj.","zh":"偏远的；远程的","collocation":""},{"id":577,"en":"roughly","pos":"adv.","zh":"大约；粗略地","collocation":""},{"id":578,"en":"severe","pos":"adj.","zh":"严重的","collocation":""},{"id":579,"en":"steady","pos":"adj.","zh":"稳定的；持续的","collocation":""},{"id":580,"en":"uncertain","pos":"adj.","zh":"不确定的","collocation":""},{"id":581,"en":"acquire","pos":"v.","zh":"获得；习得","collocation":"acquire knowledge/skills（获得知识/技能）"},{"id":582,"en":"anticipate","pos":"v.","zh":"预期；预料","collocation":"anticipate changes/problems（预期变化/问题）"},{"id":583,"en":"attach","pos":"v.","zh":"附上；重视","collocation":"attach importance to（重视……）"},{"id":584,"en":"capture","pos":"v.","zh":"捕获；吸引","collocation":""},{"id":585,"en":"combine","pos":"v.","zh":"结合","collocation":""},{"id":586,"en":"commit","pos":"v.","zh":"承诺；犯（罪/错）","collocation":""},{"id":587,"en":"cope","pos":"v.","zh":"应对","collocation":"cope with（应对；处理）"},{"id":588,"en":"criticize","pos":"v.","zh":"批评","collocation":""},{"id":589,"en":"devote","pos":"v.","zh":"投入；致力于","collocation":"devote time/energy to（把时间/精力投入……）"},{"id":590,"en":"eliminate","pos":"v.","zh":"消除；淘汰","collocation":"eliminate risk/error（消除风险/错误）"},{"id":591,"en":"encounter","pos":"v./n.","zh":"遭遇；遇到","collocation":""},{"id":592,"en":"exceed","pos":"v.","zh":"超过","collocation":""},{"id":593,"en":"extend","pos":"v.","zh":"延伸；延长","collocation":""},{"id":594,"en":"facilitate","pos":"v.","zh":"促进；使便利","collocation":"facilitate communication/learning（促进交流/学习）"},{"id":595,"en":"hesitate","pos":"v.","zh":"犹豫","collocation":""},{"id":596,"en":"restore","pos":"v.","zh":"恢复；修复","collocation":""},{"id":597,"en":"submit","pos":"v.","zh":"提交；屈服","collocation":"submit an application/report（提交申请/报告）"},{"id":598,"en":"tolerate","pos":"v.","zh":"容忍","collocation":""},{"id":599,"en":"withdraw","pos":"v.","zh":"撤回；退出；取款","collocation":""},{"id":600,"en":"seize","pos":"v.","zh":"抓住；夺取","collocation":""}];
+
+function $(id){ return document.getElementById(id); }
+function shuffle(arr){ var a = arr.slice(); for(var i=a.length-1;i>0;i--){ var j=Math.floor(Math.random()*(i+1)); var t=a[i]; a[i]=a[j]; a[j]=t; } return a; }
+function esc(s){ return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;"); }
+function showView(name){
+  ["view-home","view-quiz","view-result","view-list"].forEach(function(v){ $(v).classList.toggle("hidden", v!==name); });
+  window.scrollTo(0,0);
+}
+
+/* ---------- 发音：Dictionary API → Google TTS → speechSynthesis ---------- */
+var audioCache = {};
+var currentAudio = null;
+function speakFallback(word){
+  try{
+    if(!("speechSynthesis" in window)) return;
+    window.speechSynthesis.cancel();
+    var u = new SpeechSynthesisUtterance(word);
+    u.lang = "en-US"; u.rate = 0.92;
+    var voices = window.speechSynthesis.getVoices();
+    for(var i=0;i<voices.length;i++){ if(voices[i].lang && voices[i].lang.indexOf("en")===0){ u.voice = voices[i]; break; } }
+    window.speechSynthesis.speak(u);
+  }catch(e){}
+}
+function playAudioUrl(url, word){
+  return new Promise(function(resolve){
+    try{
+      if(currentAudio){ try{ currentAudio.pause(); }catch(e){} }
+      var a = new Audio(url);
+      currentAudio = a;
+      var done=false;
+      function ok(){ if(!done){done=true; resolve(true);} }
+      function fail(){ if(!done){done=true; resolve(false);} }
+      a.addEventListener("ended", ok);
+      a.addEventListener("error", fail);
+      var p = a.play();
+      if(p && p.then){ p.then(function(){ setTimeout(ok, 350); }).catch(fail); }
+      else { setTimeout(ok, 350); }
+      setTimeout(function(){ if(!done && !a.paused){ ok(); } }, 2500);
+    }catch(e){ resolve(false); }
+  });
+}
+async function fetchDictAudio(word){
+  if(audioCache[word] !== undefined) return audioCache[word];
+  try{
+    var ctrl = ("AbortController" in window) ? new AbortController() : null;
+    var timer = ctrl ? setTimeout(function(){ ctrl.abort(); }, 4000) : null;
+    var res = await fetch("https://api.dictionaryapi.dev/api/v2/entries/en/" + encodeURIComponent(word), ctrl ? {signal: ctrl.signal} : {});
+    if(timer) clearTimeout(timer);
+    if(!res.ok){ audioCache[word]=null; return null; }
+    var data = await res.json();
+    var url = null;
+    if(Array.isArray(data)){
+      for(var i=0;i<data.length && !url;i++){
+        var ph = data[i].phonetics || [];
+        for(var j=0;j<ph.length;j++){ if(ph[j].audio){ url = ph[j].audio; break; } }
+      }
+    }
+    audioCache[word] = url;
+    return url;
+  }catch(e){ audioCache[word]=null; return null; }
+}
+async function playWord(word, btn){
+  var orig = btn ? btn.textContent : "";
+  if(btn){ btn.disabled = true; btn.textContent = "⏳"; }
+  try{
+    var dictUrl = await fetchDictAudio(word);
+    if(dictUrl){
+      var ok1 = await playAudioUrl(dictUrl, word);
+      if(ok1) return;
+    }
+    var gUrl = "https://translate.googleapis.com/translate_tts?ie=UTF-8&tl=en&client=gtx&q=" + encodeURIComponent(word);
+    var ok2 = await playAudioUrl(gUrl, word);
+    if(ok2) return;
+    speakFallback(word);
+  }catch(e){
+    speakFallback(word);
+  }finally{
+    if(btn){ btn.disabled = false; btn.textContent = orig || "🔊"; }
+  }
+}
+if("speechSynthesis" in window){ try{ window.speechSynthesis.getVoices(); }catch(e){} }
+
+/* ---------- 范围 / 模式选择 ---------- */
+var RANGES = [
+  {key:"all", label:"全部 600", lo:1, hi:600},
+  {key:"r1", label:"1–100", lo:1, hi:100},
+  {key:"r2", label:"101–200", lo:101, hi:200},
+  {key:"r3", label:"201–300", lo:201, hi:300},
+  {key:"r4", label:"301–400", lo:301, hi:400},
+  {key:"r5", label:"401–500", lo:401, hi:500},
+  {key:"r6", label:"501–600", lo:501, hi:600}
+];
+var selectedRange = "all";
+var selectedMode = "en2zh";
+var selectedKind = "finite"; // finite=20题模式, loop=循环模式
+
+function curRange(){ for(var i=0;i<RANGES.length;i++){ if(RANGES[i].key===selectedRange) return RANGES[i]; } return RANGES[0]; }
+function rangeWords(){ var r = curRange(); return WORDS.filter(function(w){ return w.id>=r.lo && w.id<=r.hi; }); }
+function modeName(m){ return m==="en2zh" ? "英翻中" : m==="zh2en" ? "中翻英" : "混合随机"; }
+
+function buildRangeChips(containerId){
+  var box = $(containerId); box.innerHTML = "";
+  RANGES.forEach(function(r){
+    var b = document.createElement("button");
+    b.type = "button"; b.className = "chip"; b.textContent = r.label;
+    b.setAttribute("data-range", r.key);
+    b.setAttribute("aria-pressed", r.key===selectedRange ? "true" : "false");
+    b.addEventListener("click", function(){ setRange(r.key); });
+    box.appendChild(b);
+  });
+}
+function syncRangeChips(){
+  document.querySelectorAll(".chip[data-range]").forEach(function(c){
+    c.setAttribute("aria-pressed", c.getAttribute("data-range")===selectedRange ? "true" : "false");
+  });
+}
+function updateStartBtn(){
+  $("startBtn").textContent = selectedKind==="loop" ? "开始循环练习 →" : "开始抽考 20 题 →";
+  var r = curRange();
+  $("rangeNote").textContent = "当前范围：" + r.label + "，共 " + rangeWords().length + " 个单词。抽题和单词表都会用这个范围。";
+}
+function setRange(key){
+  selectedRange = key;
+  syncRangeChips();
+  updateStartBtn();
+  if(!$("view-list").classList.contains("hidden")) renderList($("listSearch").value);
+}
+buildRangeChips("homeRangeChips");
+buildRangeChips("listRangeChips");
+
+document.querySelectorAll(".mode-btn[data-mode]").forEach(function(b){
+  b.addEventListener("click", function(){
+    selectedMode = b.getAttribute("data-mode");
+    document.querySelectorAll(".mode-btn[data-mode]").forEach(function(x){ x.setAttribute("aria-pressed", x===b ? "true" : "false"); });
+  });
+});
+document.querySelectorAll(".kind-btn").forEach(function(b){
+  b.addEventListener("click", function(){
+    selectedKind = b.getAttribute("data-kind");
+    document.querySelectorAll(".kind-btn").forEach(function(x){ x.setAttribute("aria-pressed", x===b ? "true" : "false"); });
+    updateStartBtn();
+  });
+});
+updateStartBtn();
+
+/* ---------- 测验状态 ---------- */
+var quiz = null;
+/* finite: {kind, mode, rangeKey, questions:[], idx, score, wrong:[], total}
+   loop:   {kind, mode, rangeKey, deck:[], pos, round, lastId, score, answered, wrong:[], cur, curAnswered} */
+
+function buildQuestion(w, pool){
+  var dir = quiz.mode === "mixed" ? (Math.random() < 0.5 ? "en2zh" : "zh2en") : quiz.mode;
+  var src = (pool && pool.length >= 4) ? pool : WORDS;
+  var others = shuffle(src.filter(function(x){ return x.id !== w.id; })).slice(0,3);
+  var opts = shuffle([w].concat(others));
+  return { word: w, dir: dir, options: opts, correctId: w.id };
+}
+function startFinite(mode, customWords, rangeKey){
+  var words = customWords ? shuffle(customWords.slice()) : shuffle(rangeWords()).slice(0,20);
+  var pool = customWords ? rangeWords() : words.concat(rangeWords());
+  quiz = { kind:"finite", mode: mode, rangeKey: rangeKey || selectedRange,
+           questions: [], idx: 0, score: 0, wrong: [], total: words.length };
+  var poolForQ = rangeWords();
+  quiz.questions = words.map(function(w){ return buildQuestion(w, poolForQ); });
+  showView("view-quiz");
+  renderQuestion();
+}
+function startLoop(mode){
+  var pool = rangeWords();
+  quiz = { kind:"loop", mode: mode, rangeKey: selectedRange,
+           deck: shuffle(pool), pos: 0, round: 1, lastId: null,
+           score: 0, answered: 0, wrong: [], cur: null, curAnswered: false };
+  nextLoopQuestion(true);
+  showView("view-quiz");
+  renderQuestion();
+}
+function nextLoopQuestion(first){
+  if(quiz.pos >= quiz.deck.length){
+    // 一轮出完：重新洗牌，并避免新一轮第一题和上一题重复
+    var lastId = quiz.lastId;
+    var nd = shuffle(rangeWords());
+    if(nd.length > 1 && lastId !== null && nd[0].id === lastId){
+      var t = nd[0]; nd[0] = nd[1]; nd[1] = t;
+    }
+    quiz.deck = nd; quiz.pos = 0; quiz.round++;
+  }
+  var w = quiz.deck[quiz.pos];
+  quiz.cur = buildQuestion(w, rangeWords());
+  quiz.curAnswered = false;
+  if(!first){ /* 已由调用方 render */ }
+}
+function currentQuestion(){
+  return quiz.kind === "loop" ? quiz.cur : quiz.questions[quiz.idx];
+}
+function optionText(q, optWord){
+  return q.dir === "en2zh" ? optWord.zh : optWord.en;
+}
+function renderQuestion(){
+  var q = currentQuestion();
+  var isLoop = quiz.kind === "loop";
+  if(isLoop){
+    var pct = quiz.answered ? Math.round(quiz.score/quiz.answered*100) : 100;
+    $("qProgress").textContent = "已答 " + quiz.answered + " 题 · 答对 " + quiz.score + " 题 · 本轮第 " + (quiz.pos+1) + " / " + quiz.deck.length + " 题（第 " + quiz.round + " 轮）";
+    $("qScore").textContent = "正确率 " + pct + "%";
+    $("qBar").style.width = ((quiz.pos)/quiz.deck.length*100) + "%";
+  } else {
+    $("qProgress").textContent = "第 " + (quiz.idx+1) + " / " + quiz.total + " 题";
+    $("qScore").textContent = "得分 " + quiz.score;
+    $("qBar").style.width = ((quiz.idx)/quiz.total*100) + "%";
+  }
+  $("endBtn").className = "end-btn" + (isLoop ? " show" : "");
+  $("quitBtn").style.display = isLoop ? "none" : "";
+  var isEn = q.dir === "en2zh";
+  $("qDir").textContent = isEn ? "英翻中 · 选出中文意思" : "中翻英 · 选出英文单词";
+  var wordEl = $("qWord");
+  wordEl.textContent = isEn ? q.word.en : q.word.zh;
+  wordEl.className = "q-word" + (isEn ? "" : " zh-prompt");
+  $("qPos").textContent = isEn ? q.word.pos : "想一想：这个中文是哪个英文单词？";
+  var sp = $("qSpeak");
+  if(isEn){ sp.disabled = false; $("qSpeakNote").textContent = "听发音"; }
+  else { sp.disabled = true; $("qSpeakNote").textContent = "答完后可听"; }
+  sp.onclick = function(){ playWord(q.word.en, sp); };
+  var box = $("qOptions"); box.innerHTML = "";
+  q.options.forEach(function(opt){
+    var b = document.createElement("button");
+    b.type = "button"; b.className = "opt"; b.textContent = optionText(q, opt);
+    b.setAttribute("data-id", opt.id);
+    b.addEventListener("click", function(){ answer(q, opt, b); });
+    box.appendChild(b);
+  });
+  var fb = $("qFeedback"); fb.className = "feedback"; fb.innerHTML = "";
+  $("nextBtn").className = "next-btn";
+  renderLinks(q, false);
+}
+function renderLinks(q, answered){
+  var wrap = $("qLinks"); wrap.innerHTML = "";
+  var isEn = q.dir === "en2zh";
+  if(!isEn && !answered){
+    var s = document.createElement("span"); s.className="locked";
+    s.textContent = "🔒 Merriam-Webster 与 Google 翻译链接将在作答后显示（避免泄露答案）";
+    wrap.appendChild(s); return;
+  }
+  var mw = document.createElement("a");
+  mw.href = "https://www.merriam-webster.com/dictionary/" + encodeURIComponent(q.word.en);
+  mw.target = "_blank"; mw.rel = "noopener";
+  mw.textContent = "📖 Merriam-Webster 查询";
+  var gt = document.createElement("a");
+  gt.href = "https://translate.google.com/?sl=en&tl=zh-CN&text=" + encodeURIComponent(q.word.en) + "&op=translate";
+  gt.target = "_blank"; gt.rel = "noopener";
+  gt.textContent = "🔊 Google 翻译发音页";
+  wrap.appendChild(mw); wrap.appendChild(gt);
+}
+function answer(q, chosen, btn){
+  if(quiz.kind === "loop" && quiz.curAnswered) return;
+  if(quiz.kind === "finite" && q._answered) return;
+  q._answered = true;
+  var correct = chosen.id === q.correctId;
+  if(correct) quiz.score++;
+  else quiz.wrong.push(q);
+  if(quiz.kind === "loop"){
+    quiz.curAnswered = true;
+    quiz.answered++;
+    quiz.lastId = q.word.id;
+    var pct = Math.round(quiz.score/quiz.answered*100);
+    $("qScore").textContent = "正确率 " + pct + "%";
+    $("qProgress").textContent = "已答 " + quiz.answered + " 题 · 答对 " + quiz.score + " 题 · 本轮第 " + (quiz.pos+1) + " / " + quiz.deck.length + " 题（第 " + quiz.round + " 轮）";
+    $("qBar").style.width = ((quiz.pos+1)/quiz.deck.length*100) + "%";
+  } else {
+    $("qScore").textContent = "得分 " + quiz.score;
+    $("qBar").style.width = ((quiz.idx+1)/quiz.total*100) + "%";
+  }
+  var btns = $("qOptions").querySelectorAll(".opt");
+  btns.forEach(function(b){
+    b.disabled = true;
+    var id = parseInt(b.getAttribute("data-id"),10);
+    if(id === q.correctId) b.classList.add("correct");
+    else if(b === btn) b.classList.add("wrong");
+    else b.classList.add("dim");
+  });
+  var sp = $("qSpeak"); sp.disabled = false; $("qSpeakNote").textContent = "听发音";
+  var fb = $("qFeedback");
+  fb.className = "feedback show " + (correct ? "good" : "badf");
+  var correctText = q.dir === "en2zh" ? q.word.zh : q.word.en;
+  var html = "";
+  if(correct) html += '<div class="verdict">✅ 答对了！</div>';
+  else html += '<div class="verdict">❌ 答错了，正确答案是：' + esc(correctText) + '</div>';
+  html += '<div class="detail"><span class="enw">' + esc(q.word.en) + '</span> <span>' + esc(q.word.pos) + '</span> · ' + esc(q.word.zh);
+  if(q.word.collocation) html += '<br>常见搭配：' + esc(q.word.collocation);
+  html += '</div>';
+  fb.innerHTML = html;
+  renderLinks(q, true);
+  var nb = $("nextBtn");
+  if(quiz.kind === "loop") nb.textContent = "下一题 →";
+  else nb.textContent = (quiz.idx+1 >= quiz.total) ? "看成绩 →" : "下一题 →";
+  nb.className = "next-btn show";
+}
+$("nextBtn").addEventListener("click", function(){
+  if(quiz.kind === "loop"){
+    quiz.pos++;
+    nextLoopQuestion(false);
+    renderQuestion();
+  } else {
+    if(quiz.idx+1 >= quiz.total){ finishQuiz(); }
+    else { quiz.idx++; renderQuestion(); }
+  }
+});
+$("endBtn").addEventListener("click", function(){ finishQuiz(); });
+$("quitBtn").addEventListener("click", function(){ quiz=null; showView("view-home"); refreshLastResult(); });
+$("startBtn").addEventListener("click", function(){
+  if(selectedKind === "loop") startLoop(selectedMode);
+  else startFinite(selectedMode, null, selectedRange);
+});
+
+/* ---------- 成绩 / 结算 ---------- */
+function saveLastResult(score, total){
+  try{
+    var pct = total ? Math.round(score/total*100) : 0;
+    localStorage.setItem("cet4-last-result", JSON.stringify({
+      score: score, total: total, pct: pct,
+      mode: quiz.mode, rangeKey: quiz.rangeKey, kind: quiz.kind,
+      date: new Date().toLocaleString("zh-CN"),
+      wrongIds: quiz.wrong.map(function(q){ return q.word.id; })
+    }));
+  }catch(e){}
+}
+function renderWrongList(){
+  var list = $("rWrongList"); list.innerHTML = "";
+  quiz.wrong.forEach(function(q){
+    var row = document.createElement("div"); row.className="wrong-item";
+    var correctText = q.dir === "en2zh" ? q.word.zh : q.word.en;
+    row.innerHTML = '<div class="wi-main"><span class="wi-en">' + esc(q.word.en) + '</span> <span style="color:var(--muted);font-size:14px">' + esc(q.word.pos) + '</span><div class="wi-zh">' + esc(q.word.zh) + ' · 正确答案：' + esc(correctText) + (q.word.collocation ? '<br>搭配：' + esc(q.word.collocation) : '') + '</div></div>';
+    var b = document.createElement("button");
+    b.type="button"; b.className="speak-btn small"; b.textContent="🔊"; b.setAttribute("aria-label","播放 " + q.word.en + " 发音");
+    (function(w,btn){ btn.addEventListener("click", function(){ playWord(w, btn); }); })(q.word.en, b);
+    row.appendChild(b);
+    list.appendChild(row);
+  });
+}
+function finishQuiz(){
+  var isLoop = quiz.kind === "loop";
+  var total = isLoop ? quiz.answered : quiz.total;
+  var score = quiz.score;
+  var pct = total ? Math.round(score/total*100) : 0;
+  var rLabel = "全部 600";
+  for(var i=0;i<RANGES.length;i++){ if(RANGES[i].key===quiz.rangeKey) rLabel = RANGES[i].label; }
+  $("rEyebrow").textContent = isLoop ? "循环结算" : "测验结果";
+  if(isLoop){
+    $("rScore").textContent = total ? (pct + "%") : "—";
+    $("rSub").textContent = total
+      ? "范围 " + rLabel + " · 共答 " + total + " 题，答对 " + score + " 题，答错 " + (total-score) + " 题，正确率 " + pct + "%。" + (pct>=90 ? "表现优秀，继续保持！" : pct>=70 ? "不错，再复习一下错题就更稳了。" : "没关系，把错题重测几遍就会记住。")
+      : "这次还没有答题就结束了。点「继续循环」随时开始。";
+  } else {
+    $("rScore").textContent = score + " / " + total;
+    $("rSub").textContent = "范围 " + rLabel + " · 答对率 " + pct + "%" + (pct>=90 ? " · 表现优秀，继续保持！" : pct>=70 ? " · 不错，再复习一下错题就更稳了。" : pct>=50 ? " · 有进步空间，先把错题重测一遍。" : " · 没关系，用「只重测错题」多练几次就会记住。");
+  }
+  $("rPerfect").classList.toggle("hidden", !(total>0 && quiz.wrong.length===0));
+  $("rWrongWrap").classList.toggle("hidden", quiz.wrong.length===0);
+  $("retryWrongBtn").style.display = quiz.wrong.length===0 ? "none" : "";
+  $("continueBtn").style.display = isLoop ? "" : "none";
+  $("againBtn").style.display = isLoop ? "none" : "";
+  if(total > 0) saveLastResult(score, total);
+  renderWrongList();
+  showView("view-result");
+}
+$("continueBtn").addEventListener("click", function(){
+  if(!quiz || quiz.kind !== "loop") return;
+  showView("view-quiz");
+  if(quiz.curAnswered){ quiz.pos++; nextLoopQuestion(false); }
+  renderQuestion();
+});
+$("againBtn").addEventListener("click", function(){
+  var m = quiz ? quiz.mode : selectedMode;
+  var rk = quiz ? quiz.rangeKey : selectedRange;
+  startFinite(m, null, rk);
+});
+$("retryWrongBtn").addEventListener("click", function(){
+  if(!quiz || quiz.wrong.length===0) return;
+  var seen = {}, words = [];
+  quiz.wrong.forEach(function(q){ if(!seen[q.word.id]){ seen[q.word.id]=1; words.push(q.word); } });
+  var mode = quiz.mode, rk = quiz.rangeKey;
+  startFinite(mode, words, rk);
+});
+$("homeBtn").addEventListener("click", function(){ showView("view-home"); refreshLastResult(); });
+
+function refreshLastResult(){
+  var el = $("lastResult");
+  try{
+    var raw = localStorage.getItem("cet4-last-result");
+    if(!raw){ el.classList.add("hidden"); return; }
+    var r = JSON.parse(raw);
+    var rLabel = "全部 600";
+    for(var i=0;i<RANGES.length;i++){ if(RANGES[i].key===r.rangeKey) rLabel = RANGES[i].label; }
+    var kindName = r.kind === "loop" ? "循环模式" : "20 题模式";
+    el.innerHTML = "📌 上次成绩（" + esc(r.date||"") + " · " + modeName(r.mode) + " · " + rLabel + " · " + kindName + "）：<strong>" + r.score + " / " + r.total + "（" + r.pct + "%）</strong>" + (r.wrongIds && r.wrongIds.length ? "，错了 " + r.wrongIds.length + " 题" : "，全对 🎉");
+    el.classList.remove("hidden");
+  }catch(e){ el.classList.add("hidden"); }
+}
+
+/* ---------- 单词表 ---------- */
+function renderList(filter){
+  var f = (filter||"").trim().toLowerCase();
+  var raw = (filter||"").trim();
+  var pool = rangeWords();
+  var rows = pool.filter(function(w){
+    if(!f) return true;
+    return w.en.toLowerCase().indexOf(f) >= 0 || w.zh.indexOf(raw) >= 0 || (w.collocation||"").toLowerCase().indexOf(f) >= 0;
+  });
+  var r = curRange();
+  $("listCount").textContent = "当前范围：" + r.label + "，共 " + pool.length + " 个单词" + (f ? "，符合搜索的 " + rows.length + " 个" : "");
+  var box = $("wordList"); box.innerHTML = "";
+  if(rows.length===0){ box.innerHTML = '<p style="color:var(--muted);padding:14px 0">找不到符合的单词，换个关键词试试。</p>'; return; }
+  rows.forEach(function(w){
+    var row = document.createElement("div"); row.className="word-row";
+    var main = document.createElement("div"); main.className="wr-main";
+    main.innerHTML = '<span class="wr-en">' + esc(w.en) + '</span><span class="wr-pos">' + esc(w.pos) + '</span><div class="wr-zh">' + esc(w.zh) + '</div>' + (w.collocation ? '<div class="wr-col">' + esc(w.collocation) + '</div>' : '');
+    var num = document.createElement("div"); num.className="num"; num.textContent = w.id;
+    var actions = document.createElement("div"); actions.className="wr-actions";
+    var b = document.createElement("button");
+    b.type="button"; b.className="speak-btn small"; b.textContent="🔊"; b.setAttribute("aria-label","播放 " + w.en + " 发音");
+    b.addEventListener("click", function(){ playWord(w.en, b); });
+    var mw = document.createElement("a");
+    mw.className="mw-link"; mw.href="https://www.merriam-webster.com/dictionary/" + encodeURIComponent(w.en);
+    mw.target="_blank"; mw.rel="noopener"; mw.textContent="MW ↗";
+    actions.appendChild(b); actions.appendChild(mw);
+    row.appendChild(num); row.appendChild(main); row.appendChild(actions);
+    box.appendChild(row);
+  });
+}
+$("listSearch").addEventListener("input", function(){ renderList(this.value); });
+$("openListBtn").addEventListener("click", function(){ renderList($("listSearch").value); showView("view-list"); });
+$("backHomeBtn").addEventListener("click", function(){ showView("view-home"); refreshLastResult(); });
+
+refreshLastResult();
+</script>
+</body>
+</html>
